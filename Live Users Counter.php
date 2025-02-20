@@ -13,7 +13,7 @@
  
  class RealTimeUserCounter {
      private $table_name;
-     private $session_timeout = 30; // seconds
+     private $session_timeout = 30; 
  
      public function __construct() {
          global $wpdb;
@@ -60,8 +60,10 @@
      public function update_user_count() {
          global $wpdb;
          $count = $wpdb->get_var("SELECT COUNT(*) FROM $this->table_name WHERE last_active > NOW() - INTERVAL $this->session_timeout SECOND");
-         echo json_encode(['count' => $count]);
-         wp_die();
+         if ($count === null) {
+             $count = 0;
+         }
+         wp_send_json(['count' => intval($count)]);
      }
  
      public function track_user() {
@@ -71,9 +73,8 @@
          $user_hash = md5($ip_address . $user_agent);
  
          $wpdb->query($wpdb->prepare(
-             "INSERT INTO $this->table_name (user_hash, ip_address, last_active) 
-              VALUES (%s, %s, NOW()) 
-              ON DUPLICATE KEY UPDATE last_active = NOW()",
+             "REPLACE INTO $this->table_name (user_hash, ip_address, last_active) 
+              VALUES (%s, %s, NOW())",
              $user_hash, $ip_address
          ));
      }
@@ -81,9 +82,9 @@
  
  new RealTimeUserCounter();
  
- // CSS
+ 
  file_put_contents(plugin_dir_path(__FILE__) . 'style.css', ".rtuc-counter {position: fixed; bottom: 10px; right: 10px; background: rgba(0,0,0,0.7); color: #fff; padding: 10px; border-radius: 5px; font-size: 16px; z-index: 9999;}");
  
- // JS
+ 
  file_put_contents(plugin_dir_path(__FILE__) . 'script.js', "jQuery(document).ready(function($) { function updateUserCount() { $.post(rtuc_ajax.ajax_url, {action: 'update_user_count'}, function(response) { $('.rtuc-counter').text('Active Users: ' + JSON.parse(response).count); }); } setInterval(updateUserCount, 5000); if (!$('.rtuc-counter').length) { $('body').append('<div class=\"rtuc-counter\">Active Users: 0</div>'); } updateUserCount(); });");
  
