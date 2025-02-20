@@ -1,23 +1,17 @@
-Real-Time User Counter for WordPress
-Overview
-Real-Time User Counter is a WordPress plugin that displays the number of active users on your website in real time. The plugin provides a live counter that updates automatically without requiring page refreshes. It is lightweight, easy to use, and comes with a simple admin panel for customization.
+🟢 Real-Time Visitors Counter for WordPress
 
-Features
-✅ Real-time tracking – Displays the number of users currently on the page.
-✅ Automatic updates – The counter refreshes every 5 seconds.
-✅ Admin panel integration – Easily enable or disable the plugin from the WordPress dashboard.
-✅ Minimalist design – A non-intrusive, modern floating widget in the bottom right corner.
-✅ Optimized session management – Ensures accurate counting by tracking active sessions.
+📊 Track and Display Online Visitors Instantly
+Real-Time Visitors Counter is a powerful and lightweight WordPress plugin that allows website owners to track and display the number of online visitors in real-time. Whether they are registered users or guests, this plugin provides instant visibility into site activity.
 
-Installation
-Download the plugin and upload it to the /wp-content/plugins/ directory.
-Activate the plugin through the 'Plugins' menu in WordPress.
-The counter will automatically appear in the bottom-right corner of your website.
-Customization
-The plugin automatically loads a simple floating widget with the user count.
-To modify styles, edit the style.css file inside the plugin folder.
-The refresh interval can be adjusted in the JavaScript file script.js.
-Requirements
-WordPress 5.0 or later
-PHP 7.0 or later
-jQuery enabled
+🚀 Features:
+✅ Live Visitor Count – Instantly updates the number of active users on your site.
+✅ Guest & Registered Users Detection – Displays logged-in users by their username and guests by their IP.
+✅ Admin Dashboard Insights – View all visitor records, including IPs and visit timestamps.
+✅ Automatic User Removal – Tracks visitor sessions and removes inactive users automatically.
+✅ Minimalist & Non-Intrusive UI – A sleek counter appears in the bottom corner of the site.
+
+📡 How It Works:
+The plugin records visitors without duplicates.
+It updates real-time data dynamically.
+Users are displayed in a floating widget, ensuring seamless tracking.
+🔗 Get Started Now! Install the plugin and start monitoring your visitors in real-time.
