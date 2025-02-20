@@ -8,7 +8,8 @@
  * License: GPL2
  */
 
- if (!defined('ABSPATH')) {
+ 
+if (!defined('ABSPATH')) {
     exit;
 }
 
@@ -33,8 +34,10 @@ class RealTimeUserCounter {
         $charset_collate = $wpdb->get_charset_collate();
         $sql = "CREATE TABLE IF NOT EXISTS $this->table_name (
             id INT AUTO_INCREMENT PRIMARY KEY,
+            session_id VARCHAR(128) NOT NULL,
             ip_address VARCHAR(45) NOT NULL,
-            last_active TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            last_active TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            UNIQUE KEY unique_user (session_id)
         ) $charset_collate;";
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
         dbDelta($sql);
@@ -65,8 +68,18 @@ class RealTimeUserCounter {
 
     public function track_user() {
         global $wpdb;
+        if (!session_id()) {
+            session_start();
+        }
+        $session_id = session_id();
         $ip_address = $_SERVER['REMOTE_ADDR'];
-        $wpdb->query($wpdb->prepare("INSERT INTO $this->table_name (ip_address, last_active) VALUES (%s, NOW()) ON DUPLICATE KEY UPDATE last_active = NOW()", $ip_address));
+
+        $wpdb->query($wpdb->prepare(
+            "INSERT INTO $this->table_name (session_id, ip_address, last_active) 
+             VALUES (%s, %s, NOW()) 
+             ON DUPLICATE KEY UPDATE last_active = NOW()",
+            $session_id, $ip_address
+        ));
     }
 }
 
@@ -76,4 +89,4 @@ new RealTimeUserCounter();
 file_put_contents(plugin_dir_path(__FILE__) . 'style.css', ".rtuc-counter {position: fixed; bottom: 10px; right: 10px; background: rgba(0,0,0,0.7); color: #fff; padding: 10px; border-radius: 5px; font-size: 16px; z-index: 9999;}");
 
 
-file_put_contents(plugin_dir_path(__FILE__) . 'script.js', "jQuery(document).ready(function($) { function updateUserCount() { $.post(rtuc_ajax.ajax_url, {action: 'update_user_count'}, function(response) { $('.rtuc-counter').text('Active Users: ' + JSON.parse(response).count); }); } setInterval(updateUserCount, 5000); if (!$('.rtuc-counter').length) { $('body').append('<div class=\"rtuc-counter\">Active Users: 0</div>'); } updateUserCount(); });");
+file_put_contents(plugin_dir_path(__FILE__) . 'script.js', "jQuery(document).ready(function($) { function updateUserCount() { $.post(rtuc_ajax.ajax_url, {action: 'update_user_count'}, function(response) { $('.rtuc-counter').text('Active Users: ' + JSON.parse(response).count); }); } setInterval(updateUserCount, 5000); if (!$('.rtuc-counter').length) { $('body').append('<div class="rtuc-counter">Active Users: 0</div>'); } updateUserCount(); });");
