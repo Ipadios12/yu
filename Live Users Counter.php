@@ -6,28 +6,38 @@
  * Version: 1.2
  * Author: Constantinescu Valentin 
  * License: GPL2
- * 123
  */
 
-if (!defined('ABSPATH')) {
+ if (!defined('ABSPATH')) {
     exit;
 }
 
 class RealTimeUserCounter {
+    private $table_name;
     private $session_timeout = 30; 
 
     public function __construct() {
+        global $wpdb;
+        $this->table_name = $wpdb->prefix . 'rtuc_online_users';
+
+        register_activation_hook(__FILE__, [$this, 'create_table']);
         add_action('wp_enqueue_scripts', [$this, 'enqueue_scripts']);
         add_action('admin_menu', [$this, 'add_admin_menu']);
         add_action('wp_ajax_update_user_count', [$this, 'update_user_count']);
         add_action('wp_ajax_nopriv_update_user_count', [$this, 'update_user_count']);
-        add_action('init', [$this, 'start_session']);
+        add_action('init', [$this, 'track_user']);
     }
 
-    public function start_session() {
-        if (!session_id()) {
-            session_start();
-        }
+    public function create_table() {
+        global $wpdb;
+        $charset_collate = $wpdb->get_charset_collate();
+        $sql = "CREATE TABLE IF NOT EXISTS $this->table_name (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            ip_address VARCHAR(45) NOT NULL,
+            last_active TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        ) $charset_collate;";
+        require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+        dbDelta($sql);
     }
 
     public function enqueue_scripts() {
@@ -41,22 +51,22 @@ class RealTimeUserCounter {
     }
 
     public function settings_page() {
-        echo '<div class="wrap"><h2>Real-Time User Counter</h2><p>Acest plugin afișează numărul de utilizatori conectați în timp real.</p></div>';
+        global $wpdb;
+        $count = $wpdb->get_var("SELECT COUNT(*) FROM $this->table_name WHERE last_active > NOW() - INTERVAL $this->session_timeout SECOND");
+        echo "<div class='wrap'><h2>Real-Time User Counter</h2><p>Active Users: <strong>$count</strong></p></div>";
     }
 
     public function update_user_count() {
-        $_SESSION['user_active_' . session_id()] = time();
-        $this->cleanup_sessions();
-        echo json_encode(['count' => count($_SESSION)]);
+        global $wpdb;
+        $count = $wpdb->get_var("SELECT COUNT(*) FROM $this->table_name WHERE last_active > NOW() - INTERVAL $this->session_timeout SECOND");
+        echo json_encode(['count' => $count]);
         wp_die();
     }
 
-    private function cleanup_sessions() {
-        foreach ($_SESSION as $key => $timestamp) {
-            if (strpos($key, 'user_active_') === 0 && time() - $timestamp > $this->session_timeout) {
-                unset($_SESSION[$key]);
-            }
-        }
+    public function track_user() {
+        global $wpdb;
+        $ip_address = $_SERVER['REMOTE_ADDR'];
+        $wpdb->query($wpdb->prepare("INSERT INTO $this->table_name (ip_address, last_active) VALUES (%s, NOW()) ON DUPLICATE KEY UPDATE last_active = NOW()", $ip_address));
     }
 }
 
@@ -66,4 +76,4 @@ new RealTimeUserCounter();
 file_put_contents(plugin_dir_path(__FILE__) . 'style.css', ".rtuc-counter {position: fixed; bottom: 10px; right: 10px; background: rgba(0,0,0,0.7); color: #fff; padding: 10px; border-radius: 5px; font-size: 16px; z-index: 9999;}");
 
 
-file_put_contents(plugin_dir_path(__FILE__) . 'script.js', "jQuery(document).ready(function($) { function updateUserCount() { $.post(rtuc_ajax.ajax_url, {action: 'update_user_count'}, function(response) { $('.rtuc-counter').text('Utilizatori activi: ' + JSON.parse(response).count); }); } setInterval(updateUserCount, 5000); if (!$('.rtuc-counter').length) { $('body').append('<div class=\"rtuc-counter\">Utilizatori activi: 0</div>'); } updateUserCount(); });");
+file_put_contents(plugin_dir_path(__FILE__) . 'script.js', "jQuery(document).ready(function($) { function updateUserCount() { $.post(rtuc_ajax.ajax_url, {action: 'update_user_count'}, function(response) { $('.rtuc-counter').text('Active Users: ' + JSON.parse(response).count); }); } setInterval(updateUserCount, 5000); if (!$('.rtuc-counter').length) { $('body').append('<div class=\"rtuc-counter\">Active Users: 0</div>'); } updateUserCount(); });");
