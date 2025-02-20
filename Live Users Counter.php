@@ -1,27 +1,25 @@
 <?php
 /**
  * Plugin Name: Real-Time User Counter
- * Plugin URI: https://github.com/Ipadios12
- * Description: Afișează numărul de utilizatori activi pe site în timp real.
- * Version: 1.2
- * Author: Constantinescu Valentin 
+ * Description: Displays the number of active users on the website in real-time.
+ * Version: 1.5
+ * Author: Constantinescu Valentin
  * License: GPL2
  */
 
- 
 if (!defined('ABSPATH')) {
     exit;
 }
 
 class RealTimeUserCounter {
     private $table_name;
-    private $session_timeout = 30; 
+    private $session_timeout = 30; // seconds
 
     public function __construct() {
         global $wpdb;
         $this->table_name = $wpdb->prefix . 'rtuc_online_users';
 
-        register_activation_hook(__FILE__, [$this, 'create_table']);
+        add_action('plugins_loaded', [$this, 'create_table']);
         add_action('wp_enqueue_scripts', [$this, 'enqueue_scripts']);
         add_action('admin_menu', [$this, 'add_admin_menu']);
         add_action('wp_ajax_update_user_count', [$this, 'update_user_count']);
@@ -85,8 +83,8 @@ class RealTimeUserCounter {
 
 new RealTimeUserCounter();
 
-
+// CSS
 file_put_contents(plugin_dir_path(__FILE__) . 'style.css', ".rtuc-counter {position: fixed; bottom: 10px; right: 10px; background: rgba(0,0,0,0.7); color: #fff; padding: 10px; border-radius: 5px; font-size: 16px; z-index: 9999;}");
 
-
-file_put_contents(plugin_dir_path(__FILE__) . 'script.js', "jQuery(document).ready(function($) { function updateUserCount() { $.post(rtuc_ajax.ajax_url, {action: 'update_user_count'}, function(response) { $('.rtuc-counter').text('Active Users: ' + JSON.parse(response).count); }); } setInterval(updateUserCount, 5000); if (!$('.rtuc-counter').length) { $('body').append('<div class="rtuc-counter">Active Users: 0</div>'); } updateUserCount(); });");
+// JS
+file_put_contents(plugin_dir_path(__FILE__) . 'script.js', "jQuery(document).ready(function($) { function updateUserCount() { $.post(rtuc_ajax.ajax_url, {action: 'update_user_count'}, function(response) { $('.rtuc-counter').text('Active Users: ' + JSON.parse(response).count); }); } setInterval(updateUserCount, 5000); if (!$('.rtuc-counter').length) { $('body').append('<div class=\"rtuc-counter\">Active Users: 0</div>'); } updateUserCount(); });");
